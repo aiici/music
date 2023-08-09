@@ -18,4 +18,4 @@ python main.py #默认开放端口8089
 
 ### 展示图
 
-![image-20230809145538571](/Users/asnit/Library/Application Support/typora-user-images/image-20230809145538571.png)
+![image-show](img/show.jpg)
