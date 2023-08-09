@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐下载</title>
+    <style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    text-align: center;
+}
+
+h1 {
+    color: #007bff;
+    font-size: 36px;
+    margin-bottom: 30px;
+}
+
+form {
+    margin-top: 20px;
+}
+
+input[type="text"] {
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    width: 70%;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:focus {
+    outline: none;
+}
+
+.search-results {
+    margin-top: 30px;
+    text-align: left;
+    font-size: 18px;
+}
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    background-color: #f2f2f2;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.item {
+    flex: 1;
+    margin: 0;
+}
+
+ .site-footer {
+    background-color: #f2f2f2;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #555555;
+}
+
+.footer-text {
+    margin: 0;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>全网音乐随便下</h1>
+        <form id="searchForm">
+            <input type="text" name="searchQuery" placeholder="请输入歌名或歌手...">
+            <button type="submit" >搜索</button>
+        </form>
+
+<div class="search-results" id="searchResults">
+</div>
+    </div>
+    <footer class="site-footer">
+        <p class="footer-text">
+            本站所有数据均系网友搜集自互联网后分享。<br>
+            音频版权来自各网站，本站不提供任何音频存储和贩卖服务，旨在音乐交流分享.
+        </p>
+    </footer>
+    </div>
+    <script>
+        document.getElementById("searchForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            var searchQuery = document.querySelector("input[name='searchQuery']").value;
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var responseData = JSON.parse(xhr.responseText);
+
+                        displaySearchResults(responseData);
+                    } else {
+                        console.error("AJAX request failed with status: " + xhr.status);
+                    }
+                }
+            };
+            xhr.open("POST", "/search", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.send("searchQuery=" + encodeURIComponent(searchQuery));
+        });
+        function displaySearchResults(data) {
+            var jsonDataList = document.getElementById("searchResults");
+            jsonDataList.innerHTML = "";
+            var headerRow = document.createElement("div");
+    headerRow.classList.add("result-header");
+    headerRow.innerHTML = `
+        <p class="header-item">歌名</p>
+        <p class="header-item">歌手</p>
+        <p class="header-item">操作</p>
+    `;
+    jsonDataList.appendChild(headerRow);
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var item = data[key];
+                    var songName = item.name;
+                    var artist = item.song;
+                    var downloadUrl = item.url;
+
+                   var listItem = document.createElement("div");
+            listItem.classList.add("result-item");
+            listItem.innerHTML = `
+                <p class="item">${songName}</p>
+                <p class="item">${artist}</p>
+                <button class="download-button" data-url="${downloadUrl}" onclick="handleDownload(this)">下载</button>
+            `;
+            jsonDataList.appendChild(listItem);
+                }
+            }
+        }
+        function handleDownload(button) {
+            var downloadUrl = button.getAttribute("data-url");
+            sendDownloadRequest(downloadUrl);
+        }
+
+        function sendDownloadRequest(downloadUrl) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        var aimUrl = response.aim_url;
+                        downloadUsingBlob(aimUrl);
+                        } else {
+                        console.error("Download failed with status: " + xhr.status);
+                    }
+                }
+            };
+            xhr.open("POST", "/download", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify({ downloadUrl: downloadUrl }));
+        }
+
+
+        function downloadUsingBlob(aimUrl) {
+            var link = document.createElement("a");
+            link.href = aimUrl;
+            link.target = "_blank";
+            link.style.display = "none";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
